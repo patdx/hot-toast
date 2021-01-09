@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
-  selector: 'lib-hot-toast-animated-icon',
+  selector: 'hot-toast-animated-icon',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="hot-toast-animated-icon">
       <ng-content></ng-content>
@@ -31,8 +32,4 @@ import { Component, OnInit } from '@angular/core';
     `,
   ],
 })
-export class AnimatedIconComponent implements OnInit {
-  constructor() {}
-
-  ngOnInit() {}
-}
+export class AnimatedIconComponent {}

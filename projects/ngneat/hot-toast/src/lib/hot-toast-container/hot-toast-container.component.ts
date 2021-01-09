@@ -1,13 +1,14 @@
-import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { HotToastBaseComponent } from './components/hot-toast-base/hot-toast-base.component';
-import { Toast, ToastPosition } from './hot-toast.model';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, QueryList, ViewChildren } from '@angular/core';
+import { Toast, ToastPosition } from '@ngneat/hot-toast';
+import { HotToastComponent } from '../hot-toast/hot-toast.component';
+import { ToastRef } from '../toast-ref';
 
 @Component({
-  selector: 'lib-hot-toast',
-  templateUrl: './hot-toast.component.html',
-  styles: [],
+  selector: 'hot-toast-container',
+  templateUrl: './hot-toast-container.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HotToastComponent implements OnInit {
+export class HotToastContainerComponent {
   toasts: Toast[] = [];
   position: ToastPosition = 'top-center';
   reverseOrder: boolean = false;
@@ -16,13 +17,20 @@ export class HotToastComponent implements OnInit {
 
   private readonly offsetMargin = 8;
 
-  @ViewChildren(HotToastBaseComponent) hotToastList!: QueryList<HotToastBaseComponent>;
+  @ViewChildren(HotToastComponent) hotToastList: QueryList<HotToastComponent>;
   pausedAt: number;
   diff: number;
 
-  constructor() {}
+  constructor(private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void {}
+  addToast(ref: ToastRef) {
+    this.toasts = [...this.toasts, ref.getToast()];
+    this.cdr.detectChanges();
+
+    return () => {
+      this.toasts = this.toasts.filter((current) => current !== ref.getToast());
+    };
+  }
 
   trackById(index: number, toast: Toast) {
     return toast.id;
@@ -31,12 +39,14 @@ export class HotToastComponent implements OnInit {
   calculateOffset(toastId: string) {
     const visibleToasts = this.toasts.filter((t) => t.visible);
     const index = visibleToasts.findIndex((toast) => toast.id === toastId);
+
     const offset =
       index !== -1
         ? visibleToasts
             .slice(...(this.reverseOrder ? [index + 1] : [0, index]))
             .reduce((acc, t) => acc + (t.height || 0) + this.offsetMargin, 0)
         : 0;
+
     return offset;
   }
 
@@ -59,8 +69,13 @@ export class HotToastComponent implements OnInit {
 
   endPause() {
     this.diff = Date.now() - (this.pausedAt || 0);
+
     if (this.pausedAt) {
       this.pausedAt = undefined;
     }
+  }
+
+  removeToast(toast: Toast) {
+    this.toasts = this.toasts.filter((current) => current !== toast);
   }
 }

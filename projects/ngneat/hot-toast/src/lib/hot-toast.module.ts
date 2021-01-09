@@ -1,57 +1,38 @@
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, ModuleWithProviders, NgModule } from '@angular/core';
+import { ModuleWithProviders, NgModule } from '@angular/core';
 
-import { AnimatedIconComponent } from './components/animated-icon/animated-icon.component';
-import { HotToastBaseComponent } from './components/hot-toast-base/hot-toast-base.component';
-import { CheckMarkComponent } from './components/indicator/icons/checkmark/checkmark.component';
-import { ErrorComponent } from './components/indicator/icons/error/error.component';
-import { LoaderComponent } from './components/indicator/icons/loader/loader.component';
-import { IndicatorComponent } from './components/indicator/indicator.component';
-import { ToastConfig } from './hot-toast.model';
-import { HotToastComponent } from './hot-toast.component';
+import { HOT_TOAST_CONFIG, ToastConfig } from './hot-toast.types';
 import { HotToastService } from './hot-toast.service';
-import { init } from './init';
-import { TemplateComponentLoaderComponent } from './load-template-or-component';
-import { DynamicComponent } from './dynamic.component';
+import { HotToastContainerComponent } from './hot-toast-container/hot-toast-container.component';
+import { HotToastComponent } from './hot-toast/hot-toast.component';
+import { AnimatedIconComponent } from './animated-icon/animated-icon.component';
+import { IndicatorComponent } from './indicator/indicator.component';
+import { CheckMarkComponent } from './indicator/icons/checkmark/checkmark.component';
+import { ErrorComponent } from './indicator/icons/error/error.component';
+import { LoaderComponent } from './indicator/icons/loader/loader.component';
+import { DynamicContentModule } from '@ngneat/overview';
 
 @NgModule({
   declarations: [
+    HotToastContainerComponent,
     HotToastComponent,
-    HotToastBaseComponent,
     AnimatedIconComponent,
     IndicatorComponent,
     CheckMarkComponent,
     ErrorComponent,
     LoaderComponent,
-    TemplateComponentLoaderComponent,
-    DynamicComponent,
   ],
-  imports: [CommonModule],
-  exports: [
-    HotToastComponent,
-    HotToastBaseComponent,
-    AnimatedIconComponent,
-    IndicatorComponent,
-    CheckMarkComponent,
-    ErrorComponent,
-    LoaderComponent,
-    DynamicComponent,
-  ],
-  providers: [HotToastService],
+  imports: [CommonModule, DynamicContentModule],
 })
 export class HotToastModule {
-  static forRoot(config?: Partial<ToastConfig>): ModuleWithProviders<HotToastModule> {
+  static forRoot(config: Partial<ToastConfig> = {}): ModuleWithProviders<HotToastModule> {
     return {
       ngModule: HotToastModule,
-      providers: [
-        { provide: ToastConfig, useValue: config },
-        {
-          provide: APP_INITIALIZER,
-          useFactory: init,
-          deps: [HotToastService],
-          multi: true,
-        },
-      ],
+      providers: [{ provide: HOT_TOAST_CONFIG, useValue: config }],
     };
+  }
+
+  constructor(service: HotToastService) {
+    service.init();
   }
 }

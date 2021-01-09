@@ -13,17 +13,17 @@
       (mouseenter)="startPause()"
       (mouseleave)="endPause()"
     >
-      <lib-hot-toast-base
-        *ngFor="let toast of toasts; trackBy: trackById; let i = index"
+      <lib-hot-toast
+        *ngFor="let toast of toasts; trackBy: trackById"
         [pausedAt]="pausedAt"
         [diff]="diff"
         [toast]="toast"
-        [position]="position"
+        [position]="toast.position || position"
         [offset]="calculateOffset(toast.id)"
         (onHeight)="toast.height = $event; updateHeight()"
         (onWidth)="toast.width = $event; updateWidth()"
-        (remove)="toasts.splice(i, 1); updateHeight()"
-      ></lib-hot-toast-base>
+        (remove)="removeToast(toast); updateHeight()"
+      ></lib-hot-toast>
     </div>
   </div>
 </div>

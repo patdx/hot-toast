@@ -1,13 +1,16 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { IconTheme } from '../../../../hot-toast.model';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { IconTheme } from '@ngneat/hot-toast';
 
 @Component({
-  selector: 'lib-hot-toast-error',
-  template: `<div
-    class="hot-toast-error-icon"
-    [style.--error-primary]="theme?.primary || '#ff4b4b'"
-    [style.--error-secondary]="theme?.secondary || '#fff'"
-  ></div> `,
+  selector: 'hot-toast-error',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div
+      class="hot-toast-error-icon"
+      [style.--error-primary]="theme?.primary || '#ff4b4b'"
+      [style.--error-secondary]="theme?.secondary || '#fff'"
+    ></div>
+  `,
   styles: [
     `
       @keyframes circleAnimation {
@@ -82,10 +85,6 @@ import { IconTheme } from '../../../../hot-toast.model';
     `,
   ],
 })
-export class ErrorComponent implements OnInit {
+export class ErrorComponent {
   @Input() theme: IconTheme;
-
-  constructor() {}
-
-  ngOnInit() {}
 }

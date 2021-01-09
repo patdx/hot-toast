@@ -1,0 +1,23 @@
+<div class="hot-toast-bar-base-container" [ngStyle]="getPositionStyle()" [ngClass]="toast.theme">
+  <div class="hot-toast-bar-base" [ngStyle]="toast.style" [ngClass]="getToastBarBaseClasses()">
+    <hot-toast-animated-icon *ngIf="toast.icon !== undefined; else indicator">
+      <dynamic-content [content]="toast.icon"></dynamic-content>
+    </hot-toast-animated-icon>
+
+    <ng-template #indicator>
+      <hot-toast-indicator [theme]="toast.iconTheme" [type]="toast.type"></hot-toast-indicator>
+    </ng-template>
+
+    <div class="hot-toast-message">
+      <dynamic-content [content]="toast.message"></dynamic-content>
+    </div>
+
+    <button
+      *ngIf="toast.dismissible"
+      (click)="toast.visible = false"
+      type="button"
+      class="hot-toast-close-btn"
+      aria-label="Close"
+    ></button>
+  </div>
+</div>

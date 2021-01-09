@@ -1,13 +1,16 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { IconTheme } from '../../../../hot-toast.model';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { IconTheme } from '@ngneat/hot-toast';
 
 @Component({
-  selector: 'lib-hot-toast-checkmark',
-  template: `<div
-    class="hot-toast-checkmark-icon"
-    [style.--check-primary]="theme?.primary || '#61d345'"
-    [style.--check-secondary]="theme?.secondary || '#fff'"
-  ></div> `,
+  selector: 'hot-toast-checkmark',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div
+      class="hot-toast-checkmark-icon"
+      [style.--check-primary]="theme?.primary || '#61d345'"
+      [style.--check-secondary]="theme?.secondary || '#fff'"
+    ></div>
+  `,
   styles: [
     `
       @keyframes circleAnimation {
@@ -53,6 +56,7 @@ import { IconTheme } from '../../../../hot-toast.model';
         animation: circleAnimation 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         animation-delay: 100ms;
       }
+
       .hot-toast-checkmark-icon::after {
         content: '';
         box-sizing: border-box;
@@ -71,10 +75,6 @@ import { IconTheme } from '../../../../hot-toast.model';
     `,
   ],
 })
-export class CheckMarkComponent implements OnInit {
+export class CheckMarkComponent {
   @Input() theme: IconTheme;
-
-  constructor() {}
-
-  ngOnInit() {}
 }

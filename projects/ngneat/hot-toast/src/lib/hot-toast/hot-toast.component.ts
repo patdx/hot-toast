@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   DoCheck,
   ElementRef,
@@ -7,19 +8,18 @@ import {
   Input,
   OnChanges,
   OnDestroy,
-  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { Toast, ToastPosition } from '../../hot-toast.model';
-import { isComponent, isTemplateRef } from '../../utils';
+import { Toast, ToastPosition } from '../hot-toast.types';
 
 @Component({
-  selector: 'lib-hot-toast-base',
-  templateUrl: 'hot-toast-base.component.html',
-  styleUrls: ['./hot-toast-base.component.scss'],
+  selector: 'lib-hot-toast',
+  templateUrl: 'hot-toast.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrls: ['./hot-toast.component.scss'],
 })
-export class HotToastBaseComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges, DoCheck {
+export class HotToastComponent implements AfterViewInit, OnDestroy, OnChanges, DoCheck {
   @Input() toast: Toast;
   @Input() position: ToastPosition = 'top-center';
   @Input() offset = 0;
@@ -33,15 +33,11 @@ export class HotToastBaseComponent implements OnInit, AfterViewInit, OnDestroy, 
   timeout: any;
   oldDuration = 0;
 
-  isTemplateRef = isTemplateRef;
-  isComponent = isComponent;
-
   constructor(public el: ElementRef<HTMLElement>) {}
-
-  ngOnInit() {}
 
   ngAfterViewInit() {
     const toastBarBase = this.el.nativeElement.querySelector('.hot-toast-bar-base') as HTMLElement;
+
     if (toastBarBase) {
       setTimeout(() => {
         this.onHeight.emit(toastBarBase.offsetHeight);
@@ -89,6 +85,7 @@ export class HotToastBaseComponent implements OnInit, AfterViewInit, OnDestroy, 
           right: 0,
           justifyContent: 'center',
         };
+
     return {
       transform: `translateY(${this.offset * (top ? 1 : -1)}px)`,
       ...verticalStyle,
@@ -102,6 +99,7 @@ export class HotToastBaseComponent implements OnInit, AfterViewInit, OnDestroy, 
 
   getAnimationClass(): string {
     const top = this.position.includes('top');
+
     return this.toast.visible
       ? `enterAnimation${top ? 'Negative' : 'Positive'}`
       : `exitAnimation${top ? 'Negative' : 'Positive'}`;
@@ -138,13 +136,5 @@ export class HotToastBaseComponent implements OnInit, AfterViewInit, OnDestroy, 
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
-  }
-
-  get isIconString() {
-    return typeof this.toast.icon === 'string' || typeof this.toast.icon === 'number';
-  }
-
-  get isMessageString() {
-    return typeof this.toast.message === 'string' || typeof this.toast.message === 'number';
   }
 }

@@ -1,186 +1,92 @@
-import {
-  ApplicationRef,
-  ComponentFactoryResolver,
-  EmbeddedViewRef,
-  Injectable,
-  Injector,
-  Optional,
-} from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { HOT_TOAST_DEFAULT_TIMEOUTS } from './constants';
-import {
-  DefaultToastOptions,
-  HotToastServiceMethods,
-  ObservableMessages,
-  Renderable,
-  resolveValueOrFunction,
-  Toast,
-  ToastConfig,
-  ToastOptions,
-  ToastRef,
-  ToastType,
-  UpdateToastOptions,
-} from './hot-toast.model';
-import { HotToastComponent } from './hot-toast.component';
-import { Observable, Subscription } from 'rxjs';
+import { ConfigProvider, getDefaults, HOT_TOAST_CONFIG, OnlyConfig, Toast, ToastConfig } from './hot-toast.types';
+import { Observable } from 'rxjs';
+import { CompRef, Content, ViewService } from '@ngneat/overview';
+import { HotToastContainerComponent } from './hot-toast-container/hot-toast-container.component';
+import { ToastRef } from './toast-ref';
 
-@Injectable()
-export class HotToastService implements HotToastServiceMethods {
-  private _defaultConfig = new ToastConfig();
-  componentInstance: HotToastComponent;
+@Injectable({ providedIn: 'root' })
+export class HotToastService {
+  private viewRef: CompRef<HotToastContainerComponent>;
 
-  constructor(private injector: Injector, @Optional() config: ToastConfig) {
-    if (config) {
-      this._defaultConfig = { ...this._defaultConfig, ...config };
-    }
-  }
+  constructor(private viewService: ViewService, @Inject(HOT_TOAST_CONFIG) private globalConfig: ConfigProvider) {}
 
   init() {
-    const appRef = this.injector.get(ApplicationRef);
-    const componentFactoryResolver = this.injector.get(ComponentFactoryResolver);
-
-    const componentRef = componentFactoryResolver.resolveComponentFactory(HotToastComponent).create(this.injector);
-
-    componentRef.instance.position = this._defaultConfig.position;
-    componentRef.instance.reverseOrder = this._defaultConfig.reverseOrder;
-
-    this.componentInstance = componentRef.instance;
-
-    appRef.attachView(componentRef.hostView);
-
-    const domElem = (componentRef.hostView as EmbeddedViewRef<any>).rootNodes[0] as HTMLElement;
-
-    document.body.appendChild(domElem);
+    this.viewRef = this.viewService.createComponent(HotToastContainerComponent, {});
+    this.viewRef.setInput('reverseOrder', this.globalConfig.reverseOrder).appendTo(document.body);
   }
 
-  private makeToast<T>(
-    message: Renderable,
-    type: ToastType,
-    options?: ToastOptions,
-    subscription?: Subscription
-  ): ToastRef {
-    if (message === undefined) {
-      throw Error('message is needed to create a hot-toast!');
-    }
-    const now = Date.now();
-    let toast: Toast = {
-      ariaLive: options?.ariaLive ?? 'polite',
-      createdAt: now,
-      duration: options?.duration ?? HOT_TOAST_DEFAULT_TIMEOUTS[type],
-      id: options?.id ?? now.toString(),
-      message,
-      pauseDuration: 0,
-      role: options?.role ?? 'status',
-      type,
-      visible: true,
-      ...this._defaultConfig.defaultToastOptions,
-      ...options,
-    };
+  private createToast(toastConfig: ToastConfig) {
+    const toast: Toast = {
+      ...getDefaults(),
+      ...this.globalConfig,
+      duration: toastConfig?.duration ?? HOT_TOAST_DEFAULT_TIMEOUTS[toastConfig.type],
+      ...toastConfig,
+    } as Toast;
 
-    this.componentInstance.toasts.push(toast);
-
-    const that = this;
-
-    let toastRef: ToastRef = {
-      close() {
-        if (subscription) {
-          subscription.unsubscribe();
-        }
-        toast.visible = false;
-        const toastIndex = that.componentInstance.toasts.findIndex((t) => t.id === toast.id);
-        that.componentInstance.toasts.splice(toastIndex, 1, toast);
-        setTimeout(() => {
-          if (that.componentInstance.toasts[toastIndex].id === toast.id) {
-            that.componentInstance.toasts.splice(toastIndex, 1);
-          }
-        }, 1000);
-      },
-      updateMessage(message: Renderable) {
-        toast.message = message;
-      },
-      updateToast(options: UpdateToastOptions) {
-        toast = Object.assign(toast, options);
-      },
-      unsubscribe() {
-        if (subscription) {
-          subscription.unsubscribe();
-        }
-      },
-    };
-
-    return toastRef;
+    return new ToastRef(toast).appendTo(this.viewRef.ref.instance);
   }
 
-  show(message: Renderable, options?: ToastOptions) {
-    const toast = this.makeToast(message, 'blank', options);
-
-    return toast;
+  show(message: Content, config?: OnlyConfig) {
+    return this.createToast({ message, type: 'blank', ...this.globalConfig['blank'], ...config });
   }
 
-  error(message: Renderable, options?: ToastOptions) {
-    const toast = this.makeToast(message, 'error', { ...this._defaultConfig.defaultToastOptions?.error, ...options });
-
-    return toast;
+  error(message: Content, config?: OnlyConfig) {
+    return this.createToast({ message: message, type: 'error', ...this.globalConfig['error'], ...config });
   }
-  success(message: Renderable, options?: ToastOptions) {
-    const toast = this.makeToast(message, 'success', {
-      ...this._defaultConfig.defaultToastOptions?.success,
-      ...options,
-    });
 
-    return toast;
+  success(message: Content, config?: OnlyConfig) {
+    return this.createToast({ message: message, type: 'success', ...this.globalConfig['success'], ...config });
   }
-  loading(message: Renderable, options?: ToastOptions) {
-    const toast = this.makeToast(message, 'loading', {
-      ...this._defaultConfig.defaultToastOptions?.loading,
-      ...options,
-    });
 
-    return toast;
+  loading(message: Content, config?: OnlyConfig) {
+    return this.createToast({ message: message, type: 'loading', ...this.globalConfig['loading'], ...config });
   }
-  observe<T>(observable: Observable<T>, messages: ObservableMessages<T>, options?: DefaultToastOptions) {
-    let toastRef = this.makeToast(
-      messages.loading || 'Loading...',
-      'loading',
-      {
-        ...options,
-        ...this._defaultConfig.defaultToastOptions?.loading,
-        ...options?.loading,
-      },
-      observable.subscribe(
-        (v) => {
-          toastRef.updateMessage(resolveValueOrFunction(messages.subscribe, v));
-          toastRef.updateToast({
-            type: 'success',
-            duration: HOT_TOAST_DEFAULT_TIMEOUTS['success'],
-            ...this._defaultConfig.defaultToastOptions?.success,
-            ...options?.success,
-          });
-        },
-        (e) => {
-          if (messages.error) {
-            toastRef.updateMessage(resolveValueOrFunction(messages.error, e));
-            toastRef.updateToast({
-              type: 'error',
-              duration: HOT_TOAST_DEFAULT_TIMEOUTS['error'],
-              ...this._defaultConfig.defaultToastOptions?.error,
-              ...options?.error,
-            });
-          }
-        },
-        () => {
-          if (messages.complete) {
-            toastRef.updateMessage(resolveValueOrFunction(messages.complete, undefined));
-            toastRef.updateToast({
-              type: 'success',
-              duration: HOT_TOAST_DEFAULT_TIMEOUTS['success'],
-              ...this._defaultConfig.defaultToastOptions?.success,
-              ...options?.success,
-            });
-          }
-        }
-      )
-    );
 
-    return toastRef;
+  observe<T>(observable: Observable<T>, messages: any, options?: any) {
+    // let toastRef = this.createToast(
+    //   {
+    //     message: messages.loading || 'Loading...', type: 'loading', options: {
+    //       ...options,
+    //       ...this.defaultConfig.defaultToastOptions?.loading,
+    //       ...options?.loading
+    //     }, subscription: observable.subscribe(
+    //       (v) => {
+    //         toastRef.updateMessage(resolveValueOrFunction(messages.subscribe, v));
+    //         toastRef.updateToast({
+    //           type: 'success',
+    //           duration: HOT_TOAST_DEFAULT_TIMEOUTS['success'],
+    //           ...this.defaultConfig.defaultToastOptions?.success,
+    //           ...options?.success
+    //         });
+    //       },
+    //       (e) => {
+    //         if (messages.error) {
+    //           toastRef.updateMessage(resolveValueOrFunction(messages.error, e));
+    //           toastRef.updateToast({
+    //             type: 'error',
+    //             duration: HOT_TOAST_DEFAULT_TIMEOUTS['error'],
+    //             ...this.defaultConfig.defaultToastOptions?.error,
+    //             ...options?.error
+    //           });
+    //         }
+    //       },
+    //       () => {
+    //         if (messages.complete) {
+    //           toastRef.updateMessage(resolveValueOrFunction(messages.complete, undefined));
+    //           toastRef.updateToast({
+    //             type: 'success',
+    //             duration: HOT_TOAST_DEFAULT_TIMEOUTS['success'],
+    //             ...this.defaultConfig.defaultToastOptions?.success,
+    //             ...options?.success
+    //           });
+    //         }
+    //       }
+    //     )
+    //   }
+    // );
+
+    return {};
   }
 }
