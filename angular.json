@@ -145,7 +145,10 @@
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["projects/ngneat/hot-toast/**/*.ts", "projects/ngneat/hot-toast/**/*.html"]
+            "lintFilePatterns": [
+              "projects/ngneat/hot-toast/**/*.ts",
+              "projects/ngneat/hot-toast/**/*.html"
+            ]
           }
         }
       }
